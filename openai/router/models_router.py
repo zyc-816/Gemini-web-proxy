@@ -1,10 +1,9 @@
 # models_router.py
 from fastapi import APIRouter, Request, Depends
 from gemini_webapi import GeminiClient
-from protocol.models import ModelList, ModelCard
+from openai.protocol.models import ModelList, ModelCard
 
 
-# 创建路由器实例
 router = APIRouter()
 
 # --- 辅助依赖函数：从 app.state 获取 client ---
@@ -12,7 +11,7 @@ async def get_client(request: Request) -> GeminiClient:
     return request.app.state.client
 
 @router.get("/v1/models", response_model=ModelList)
-async def list_models(client: GeminiClient = Depends(get_client())):
+async def list_models(client: GeminiClient = Depends(get_client)):
     """
     返回可用的模型列表。
     通过调用 GeminiClient 动态获取账户支持的模型。

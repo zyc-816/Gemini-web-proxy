@@ -9,15 +9,13 @@ from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import StreamingResponse
 
 
-# 从刚才定义的 chat_completion.py 中引入数据结构
-from protocol.chat_completion import (
+from openai.protocol.chat_completion import (
     ChatCompletionRequest,
     ChatCompletionStreamResponse,
     ChunkChoice,
     DeltaMessage
 )
 
-# 引入 HanaokaYuzu/Gemini-API 库
 from gemini_webapi import GeminiClient
 
 router = APIRouter()
@@ -87,16 +85,25 @@ async def create_chat_completion(request: ChatCompletionRequest, client: GeminiC
     
     # 2. 定义流式生成器函数
     async def sse_generator():
-        # 生成 OpenAI 格式的唯一响应 ID
         response_id = f"chatcmpl-{uuid.uuid4().hex}"
         model_name = request.model
         
         try:
-            # 调用 HanaokaYuzu/Gemini-API 的流式输出接口，使用临时模式避免污染网页端历史记录
-            async for chunk in client.generate_content_stream(prompt, files=file_paths, temporary=True):
+            # 标记是否是第一个数据块
+            is_first_chunk = True
+            async for chunk in client.generate_content_stream(
+                prompt, 
+                files=file_paths, 
+                model=model_name,
+                temporary=True
+            ):
                 if chunk.text_delta:
-                    # 使用 chat_completion.py 定义的数据结构构建 Chunk
-                    delta = DeltaMessage(content=chunk.text_delta)
+                    if is_first_chunk:
+                        delta = DeltaMessage(role="assistant", content=chunk.text_delta)
+                        is_first_chunk = False
+                    else:
+                        delta = DeltaMessage(content=chunk.text_delta)
+                        
                     choice = ChunkChoice(index=0, delta=delta, finish_reason=None)
                     
                     resp = ChatCompletionStreamResponse(
@@ -105,7 +112,6 @@ async def create_chat_completion(request: ChatCompletionRequest, client: GeminiC
                         choices=[choice]
                     )
                     
-                    # 按照 Server-Sent Events (SSE) 规范序列化返回
                     yield f"data: {resp.model_dump_json(exclude_none=True)}\n\n"
             
             # 生成结束标志
@@ -120,16 +126,17 @@ async def create_chat_completion(request: ChatCompletionRequest, client: GeminiC
             yield "data: [DONE]\n\n"
             
         except Exception as e:
-            # 异常处理，返回错误信息
             error_msg = json.dumps({"error": {"message": str(e), "type": "server_error"}})
             yield f"data: {error_msg}\n\n"
             yield "data: [DONE]\n\n"
             
         finally:
-            # 清理刚才生成的临时图片文件
             for path in file_paths:
                 if os.path.exists(path):
-                    os.remove(path)
+                    try:
+                        os.remove(path)
+                    except Exception as e:
+                        print(f"清理临时文件失败: {path}, 错误: {e}")
 
     # 3. 返回 FastApi 的 StreamingResponse，指定媒体类型为 text/event-stream
     return StreamingResponse(sse_generator(), media_type="text/event-stream")
