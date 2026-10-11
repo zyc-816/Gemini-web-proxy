@@ -5,7 +5,7 @@ import base64
 import tempfile
 import asyncio
 from pathlib import Path
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import StreamingResponse
 
 
@@ -25,6 +25,9 @@ router = APIRouter()
 # ==========================================
 # 辅助函数：解析消息历史和提取多模态图片
 # ==========================================
+async def get_client(request: Request) -> GeminiClient:
+    return request.app.state.client
+
 def parse_messages(messages) -> tuple[str, list[str]]:
     """
     将 OpenAI 格式的 messages 转换为 Gemini 支持的单次长文本提示词
@@ -75,7 +78,7 @@ def parse_messages(messages) -> tuple[str, list[str]]:
 # 核心路由：POST /v1/chat/completions
 # ==========================================
 @router.post("/v1/chat/completions")
-async def create_chat_completion(client: GeminiClient, request: ChatCompletionRequest):
+async def create_chat_completion(request: ChatCompletionRequest, client: GeminiClient = Depends(get_client)):
     if not request.stream:
         raise HTTPException(status_code=400, detail="此接口目前仅支持流式请求 (stream=True)")
 

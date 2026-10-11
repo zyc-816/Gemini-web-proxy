@@ -7,7 +7,11 @@ authors = [
     { name = "ioezzz", email = "2oo5o816@gmail.com" }
 ]
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "fastapi>=0.143.0",
+    "gemini-webapi[browser]>=2.1.1",
+    "uvicorn>=0.54.0",
+]
 
 [project.scripts]
 gemini-web-proxy = "gemini_web_proxy:main"
@@ -15,3 +19,6 @@ gemini-web-proxy = "gemini_web_proxy:main"
 [build-system]
 requires = ["uv_build>=0.12.22,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.uv]
+package = false
