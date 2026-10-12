@@ -11,6 +11,11 @@ services:
     networks:
       - new-api-network
 
+
+# =====================================================
+# 以下引用newapi项目的官方配置模板
+# =====================================================
+
 # New-API Docker Compose Configuration
 # 
 # Quick Start:
