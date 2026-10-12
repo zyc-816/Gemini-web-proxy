@@ -31,7 +31,7 @@ services:
     restart: always
     command: --log-dir /app/logs
     ports:
-      - "localhost:3000:3000"
+      - "127.0.0.1:3000:3000"
     volumes:
       - ./newapi/data:/data
       - ./newapi/logs:/app/logs
