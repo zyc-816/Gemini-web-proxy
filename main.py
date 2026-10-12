@@ -28,7 +28,7 @@ app.include_router(models_router)
 app.include_router(chat_completion_router)
 
 def main():
-    uvicorn.run(app, host="127.0.0.1", port=8082)
+    uvicorn.run(app, host="0.0.0.0", port=8082)
 
 
 if __name__ == "__main__":
