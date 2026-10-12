@@ -5,20 +5,20 @@ from fastapi import FastAPI
 from openai import models_router
 from openai import chat_completion_router
 import uvicorn
+import os
 
 # 代理设置
-# import os
 # os.environ["HTTP_PROXY"] = ""
 # os.environ["HTTPS_PROXY"] = ""
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 启动时执行：初始化 GeminiClient 并挂载到全局 state
-    # 若无火狐浏览器，手动输入cookie
-    # Secure_1PSID = ""
-    # Secure_1PSIDTS = ""
-    # client = GeminiClient(Secure_1PSID, Secure_1PSIDTS)
-    client = GeminiClient()
+    # 若无火狐浏览器，在.env文件中手动输入对应cookie
+    Secure_1PSID = os.getenv("SECURE_1PSID")
+    Secure_1PSIDTS = os.getenv("SECURE_1PSIDTS")
+    client = GeminiClient(Secure_1PSID, Secure_1PSIDTS)
+    # client = GeminiClient()
     await client.init(timeout=30, auto_close=True, close_delay=300, auto_refresh=True)
     app.state.client = client
     yield
